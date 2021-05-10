@@ -1,8 +1,10 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
-from .models import Post
+from .models import Post, Comment
 from .forms import PostForm
 from django.shortcuts import redirect
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 
 
 def post_list(request):
@@ -10,7 +12,10 @@ def post_list(request):
     return render(request, 'blog/post_list.html', {'posts': posts})
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
-    return render(request, 'blog/post_detail.html', {'post': post})
+
+    latest_comments_list = post.comment_set.order_by('-id')[:10]
+
+    return render(request, 'blog/post_detail.html', {'post': post, 'latest_comments_list':latest_comments_list})
 
 def post_new(request):
     if request.method == "POST":
@@ -41,3 +46,8 @@ def post_edit(request, pk):
 
 def dance(request):
     return render(request,'blog/dance.html')
+
+def comment(request, pk):
+    post = Post.objects.get(pk=pk)
+    post.comment_set.create(author=request.POST['name'], text=request.POST['text'])
+    return HttpResponseRedirect( reverse('post_detail',args=(post.pk,)))
